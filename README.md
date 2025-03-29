@@ -1,8 +1,9 @@
 #### Table of contents
-1. [Introduction](#introduction)
-2. [Dataset](#dataset)
-3. [Model & Metrics](#run)
-4. [How to Run](#quickstart)
+1. [Our group's approaches](#approaches)
+2. [Introduction](#introduction)
+3. [Dataset](#dataset)
+4. [Model & Metrics](#run)
+5. [How to Run](#quickstart)
    - [Quickstart](#quickstart)
    - [Install](#install)
    - [Training](#training)
@@ -16,6 +17,73 @@
 ![](https://drive.google.com/uc?export=view&id=1DEpMpgsX-MU3-de4Gqoa7Nk3VD12_Vwk)
  
 The COVID-19 pandemic, which is caused by the SARS-CoV-2 virus, is still continuing strong, infecting hundreds of millions of people and killing millions. Face masks reduce transmission by preventing aerosols and droplets from spreading too far into the atmosphere. As a result, there is a growing demand for automated systems that can detect whether people are not wearing masks or are wearing masks incorrectly. This competition was designed in order to solve the problem mentioned above. This competition is unlike any other that has come before it. With a fixed model, participants will receive model code and configuration code that organizers use to train models. The candidate's task is to use data processing and generation techniques to improve the model's performance, then submit the dataset to the organizing team for training and evaluation on the private test set. The winner is the team with the highest score on the private test set.
+
+## Our Group's Approaches<a name="approaches">
+
+After analyzing our fixed model, we identified two key issues that negatively impacted performance:
+- **Lack of Data Shuffling:** The model does not shuffle data during training, reducing its generalization ability.
+- **Overfitting:** Training for 60 epochs on a small dataset leads to overfitting.
+
+To address these problems, we developed an automated augmentation pipeline that both increases the dataset size to prevent overfitting and improves overall data quality.
+
+---
+
+### Training Dynamics & Data Mapping
+
+Inspired by the idea of detecting hard-to-learn and easy-to-learn instances from [this article](https://arxiv.org/abs/2009.10795), we mapped our data into a 3D space defined by:
+
+- **Correctness:**  
+  Measures whether each instance is consistently labeled correctly across epochs.
+
+  $$
+    \text{corr}_i = \frac{1}{E} \sum_{e=1}^{E} t_e
+  $$
+
+  where
+
+  $$
+    t_e = \begin{cases}
+      1, & \text{if } y_e^* = y_e \\
+      0, & \text{otherwise}
+    \end{cases}
+  $$
+
+- **Confidence:**  
+  Instead of using the mean probability of the true label, we use the model's bounding box confidence across epochs.
+
+- **Variability (IOU):**  
+  We use Intersection Over Union (IOU) to assess the consistency of bounding box predictions. Averaging IOU across epochs helps evaluate the stability of our model.
+
+![](./images/instance_difficulty_level.png)
+
+After training the model with raw dataset and filtering hard-to-learn images, we found:
+- **Undetected Faces:** Instances where faces were missing in the labels.
+- **Mismatched Orders:** Cases where the order of predicted faces did not match the original labels.
+
+Using a subset of high-confidence images, we manually cleaned and relabeled the dataset. This process helped us better understand the data and refine the learning pattern of our fixed model.
+
+And since our model already performed well on the "no mask" class, we focused more on augmenting the "wearing mask" and "incorrectly wearing mask" classes. This strategy reduced class imbalance and provided the model with more diverse examples. There are two data pipeline we used:
+- Transferring Data Pipeline: Swap hard-to-learn cases from the validation set with easier cases from the training set. We assumed that the hard-to-learn cases in the validation dataset come from a data distribution that differs significantly from that of the training dataset. By transferring these challenging examples to the training set—and moving easier cases to the validation set—we aim to enhance the model’s predictive ability and align the distributions of both datasets. This approach not only helps the model learn from difficult examples but also mitigates out-of-distribution issues, ensuring that performance evaluations accurately reflect the model’s learning. Additionally, transferring easier instances to the validation set helps maintain the desired ratio between the two datasets.
+
+![](./images/transfer.png)
+
+- Generating Data Pipeline: Selectively augment only hard-to-learn and ambiguous instances based on Training Dynamics.
+
+![](./images/augment.png)
+
+
+To alleviate the drawbacks of each pipeline, we combined two pipelines into one huge process, under the name of Augmentation pipeline, to generate with a randomly chosen mixture of augmentation techniques and then transfer data back and forth. For example, due to the shortage in incorrectly wearing mask class, Training Dynamics prone to always categorize instances of this class as hard-tolearn ones. So if we used Transferring Data pipeline only, all instances of this class are transferred to training data and remained as edge cases forever.
+
+|   Augmentation  | Configuration|    
+|-----------------|:------------:|
+|      Blur      |       averaging kernel with size randomly choose from 3 to 7     |
+|       Rotate       |       between -15° and 15°      |
+|   Color jitter   |      Brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2      |
+|   Flip   |      Horizontal flip      |
+
+
+### Results 
+![Our approache's results](./images/augmentation_results.png)
 
 ## Dataset<a name="dataset"></a>
 * A dataset of 1100 images will be sent to you. This is an object detection dataset consisting of employee images at the office. 
