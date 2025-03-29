@@ -32,9 +32,7 @@ To address these problems, we developed an automated augmentation pipeline that 
 
 Inspired by the idea of detecting hard-to-learn and easy-to-learn instances from [this article](https://arxiv.org/abs/2009.10795), we mapped our data into a 3D space defined by:
 
-- **Correctness:**  
-  Measures whether each instance is consistently labeled correctly across epochs.
-
+- **Correctness:** Measures whether each instance is consistently labeled correctly across epochs.
   $$
     \text{corr}_i = \frac{1}{E} \sum_{e=1}^{E} t_e
   $$
@@ -48,11 +46,9 @@ Inspired by the idea of detecting hard-to-learn and easy-to-learn instances from
     \end{cases}
   $$
 
-- **Confidence:**  
-  Instead of using the mean probability of the true label, we use the model's bounding box confidence across epochs.
+- **Confidence:** Instead of using the mean probability of the true label, we use the model's bounding box confidence across epochs.
 
-- **Variability (IOU):**  
-  We use Intersection Over Union (IOU) to assess the consistency of bounding box predictions. Averaging IOU across epochs helps evaluate the stability of our model.
+- **Variability (IOU):** We use Intersection Over Union (IOU) to assess the consistency of bounding box predictions. Averaging IOU across epochs helps evaluate the stability of our model.
 
 ![](./images/instance_difficulty_level.png)
 
@@ -74,6 +70,7 @@ And since our model already performed well on the "no mask" class, we focused mo
 
 To alleviate the drawbacks of each pipeline, we combined two pipelines into one huge process, under the name of Augmentation pipeline, to generate with a randomly chosen mixture of augmentation techniques and then transfer data back and forth. For example, due to the shortage in incorrectly wearing mask class, Training Dynamics prone to always categorize instances of this class as hard-tolearn ones. So if we used Transferring Data pipeline only, all instances of this class are transferred to training data and remained as edge cases forever.
 
+<center>
 |   Augmentation  | Configuration|    
 |-----------------|:------------:|
 |      Blur      |       averaging kernel with size randomly choose from 3 to 7     |
