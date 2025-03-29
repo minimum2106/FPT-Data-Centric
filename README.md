@@ -70,7 +70,7 @@ And since our model already performed well on the "no mask" class, we focused mo
 
 To alleviate the drawbacks of each pipeline, we combined two pipelines into one huge process, under the name of Augmentation pipeline, to generate with a randomly chosen mixture of augmentation techniques and then transfer data back and forth. For example, due to the shortage in incorrectly wearing mask class, Training Dynamics prone to always categorize instances of this class as hard-tolearn ones. So if we used Transferring Data pipeline only, all instances of this class are transferred to training data and remained as edge cases forever.
 
-<center>
+
 |   Augmentation  | Configuration|    
 |-----------------|:------------:|
 |      Blur      |       averaging kernel with size randomly choose from 3 to 7     |
